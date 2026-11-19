@@ -1,48 +1,68 @@
-# Bamex Crue
+# Bamex Crue — PythonAnywhere free deployment
 
-Flask application for the Bamex Crue website, inquiry form, SQLite database, and private inquiry dashboard.
+This Flask site stores inquiries in SQLite and includes a private dashboard. The free PythonAnywhere plan gives the site a `YOUR-PYTHONANYWHERE-USERNAME.pythonanywhere.com` address. It does **not** connect `bamexcrue.com`; custom domains require a paid PythonAnywhere plan.
 
-## Deploy to Render
+The Beginner plan has limited daily CPU and restricted outbound internet. The site may take time to respond under those limits. SMTP email alerts may be blocked by outbound-network restrictions; inquiries still save to SQLite and can be reviewed in the dashboard.
 
-This folder is the deployable project. Do not publish the parent Documents folder: it contains unrelated files. The Render blueprint in `render.yaml` configures the app, persistent SQLite disk, health check, custom domain, and generated session key.
+## 1. Create the free web app
 
-1. Create a **public** GitHub repository named `bamexcrue-site`, and upload only the files in this folder.
-2. In Render, choose **New → Blueprint**, connect that repository, and review the Blueprint before applying it.
-3. Render will display the price before provisioning the paid web service and persistent disk. Confirm it only if the recurring price is acceptable.
-4. Enter a unique admin password of at least 16 characters for `ADMIN_PASSWORD` in Render's private environment settings. Never commit it or share it in chat.
-5. After the service is created, open its custom-domain instructions. At your domain registrar, add the exact DNS records Render provides for `bamexcrue.com`. DNS changes must be made in the registrar account by its owner. Wait for Render to verify the domain and HTTPS certificate.
-6. Open `https://bamexcrue.com`, test a request, then open `https://bamexcrue.com/admin` and sign in.
+1. Sign up for a free [PythonAnywhere Beginner account](https://www.pythonanywhere.com/registration/register/beginner/).
+2. Open the **Web** tab and add a web app using **Manual configuration** and Python 3.13 (or another version also selected for the virtual environment).
+3. Open a **Bash console** from the **Consoles** tab.
 
-The inquiry database is stored on the Render persistent disk at `/var/data/bamexcrue.db`. Keep regular backups. Deploying a new version must not remove this disk.
+## 2. Clone and install the app
 
-## Email alerts (optional)
+Run these commands in the PythonAnywhere Bash console:
 
-The contact form and dashboard work without email. To enable alerts to `kizyben47@gmail.com`, add these environment variables in Render's private environment settings. Use an SMTP app password or dedicated SMTP credential:
-
-- `SMTP_HOST`
-- `SMTP_PORT` (usually `587`)
-- `SMTP_USERNAME`
-- `SMTP_PASSWORD`
-- `SMTP_FROM` (an address approved by your email provider)
-
-Never put SMTP credentials in this repository or in the HTML. Test email delivery with a real submission after adding them.
-
-## Local development on Windows
-
-```powershell
-$python = Join-Path $env:LOCALAPPDATA "Programs\Python\Python312\python.exe"
-& $python -m pip install -r requirements.txt
-$env:SECRET_KEY = (& $python -c "import secrets; print(secrets.token_urlsafe(48))").Trim()
-$env:ADMIN_PASSWORD = "REPLACE_WITH_YOUR_OWN_LONG_PRIVATE_PASSWORD"
-& $python server.py
+```bash
+git clone https://github.com/bixray/bamexcrue-site.git ~/bamexcrue-site
+python3.13 -m venv ~/.virtualenvs/bamexcrue
+~/.virtualenvs/bamexcrue/bin/pip install -r ~/bamexcrue-site/requirements.txt
+cp ~/bamexcrue-site/.env.example ~/bamexcrue-site/.env
+chmod 600 ~/bamexcrue-site/.env
+python3.13 -c 'import secrets; print(secrets.token_urlsafe(48))'
 ```
 
-Open <http://127.0.0.1:8000> for the site and <http://127.0.0.1:8000/admin> for the dashboard.
+Copy the random value printed by the last command, open `~/bamexcrue-site/.env` in PythonAnywhere's **Files** tab, and replace the example values:
 
-## Legal pages
+- `SECRET_KEY`: the random value you just generated.
+- `ADMIN_PASSWORD`: a unique password of at least 16 characters.
+
+Keep `.env` private. It is excluded from Git. Do not paste these values into chat or commit them.
+
+## 3. Configure the web app
+
+In the **Web** tab, set the virtualenv to:
+
+```text
+/home/YOUR-PYTHONANYWHERE-USERNAME/.virtualenvs/bamexcrue
+```
+
+Open the WSGI configuration file link on that page and replace its contents with:
+
+```python
+import os
+import sys
+
+project_home = os.path.expanduser("~/bamexcrue-site")
+if project_home not in sys.path:
+    sys.path.insert(0, project_home)
+
+from pythonanywhere_wsgi import application
+```
+
+Save the WSGI file, then click **Reload** in the Web tab. Replace `YOUR-PYTHONANYWHERE-USERNAME` above with the username shown in your PythonAnywhere account.
+
+## 4. Check the site
+
+Open `https://YOUR-PYTHONANYWHERE-USERNAME.pythonanywhere.com`, submit a test inquiry, and sign in at `/admin` using the admin password you set in `.env`. The database file is `~/bamexcrue-site/bamexcrue.db`; do not delete it. Make backups of it regularly.
+
+Your GitHub username may differ from your PythonAnywhere username. Use the PythonAnywhere username for the website URL and virtualenv path.
+
+## Email alerts
+
+Email alerts are optional. PythonAnywhere free accounts restrict outbound internet, so SMTP delivery may not be available. Do not rely on email alerts unless you have tested them from the deployed site. The website's WhatsApp and email links remain available, and saved inquiries can be read in `/admin`.
+
+## Privacy and terms
 
 The privacy and terms pages are drafts based on the provided business name and Uganda. Have them reviewed for accuracy and local legal requirements before launch.
-
-## Hosting note
-
-GitHub Pages is static-only and cannot run this backend. The public GitHub repository contains the site's source; Render runs the Python app and serves the public website.

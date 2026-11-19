@@ -112,6 +112,9 @@ def email_configuration():
     }
 
 
+app.config["EMAIL_CONFIGURATION"] = email_configuration()
+
+
 def send_notification(inquiry, ticket_id, configuration):
     if configuration is None:
         return "not_configured"
