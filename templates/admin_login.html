@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% set title = "Admin login" %}
+{% block content %}
+<section class="panel narrow">
+  <h1>Inquiry dashboard</h1>
+  <p class="muted">Sign in to review and manage website requests.</p>
+  <form method="post" action="{{ url_for('admin_login_submit') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="password">Admin password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required>
+    <p><button type="submit">Sign in</button></p>
+  </form>
+</section>
+{% endblock %}

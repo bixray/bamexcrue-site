@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% set title = "Inquiry dashboard" %}
+{% block content %}
+<div class="toolbar">
+  <div>
+    <h1>Inquiry dashboard</h1>
+    <p class="muted">Showing the latest {{ inquiries|length }} requests.</p>
+  </div>
+  <form method="post" action="{{ url_for('admin_logout') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="secondary" type="submit">Sign out</button>
+  </form>
+</div>
+{% for inquiry in inquiries %}
+<article class="inquiry">
+  <header>
+    <div>
+      <strong>{{ inquiry["ticket_id"] }} · {{ inquiry["category"]|replace("_", " ")|title }}</strong>
+      <div class="muted">{{ inquiry["created_at"] }} · {{ inquiry["name"] }}</div>
+    </div>
+    <div>
+      <a href="mailto:{{ inquiry['email'] }}">{{ inquiry["email"] }}</a>
+      {% if inquiry["phone"] %}<div>{{ inquiry["phone"] }}</div>{% endif %}
+    </div>
+  </header>
+  <p class="message">{{ inquiry["message"] }}</p>
+  <div class="toolbar">
+    <form class="actions" method="post" action="{{ url_for('update_inquiry_status', ticket_id=inquiry['ticket_id']) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>
+        Status
+        <select name="status">
+          {% for value, label in statuses.items() %}
+          <option value="{{ value }}" {% if inquiry["status"] == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button type="submit">Update status</button>
+    </form>
+    <form method="post" action="{{ url_for('delete_inquiry', ticket_id=inquiry['ticket_id']) }}" onsubmit="return confirm('Delete this inquiry permanently?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="danger" type="submit">Delete</button>
+    </form>
+  </div>
+</article>
+{% else %}
+<section class="panel"><p>No inquiries yet.</p></section>
+{% endfor %}
+{% endblock %}
